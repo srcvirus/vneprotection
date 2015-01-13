@@ -1,0 +1,82 @@
+#ifndef UTIL_H_
+#define UTIL_H_
+
+#include <algorithm>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string>
+
+#define ONE_GIG 1000000000ULL
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define AT __FILE__ ":" TOSTRING(__LINE__) " "
+
+#ifdef DBG
+#define DEBUG(...) PrintDebugMessage(AT, __VA_ARGS__)
+#else
+#define DEBUG(...)
+#endif
+
+void PrintDebugMessage(const char *location, const char *fmt_string, ...) {
+  va_list args;
+  va_start(args, fmt_string);
+  std::string str = location;
+  str += fmt_string;
+  vprintf(str.c_str(), args);
+  fflush(stdout);
+  va_end(args);
+}
+
+template <class T> double GetMean(const std::vector<T> &data) {
+  T sum = T(0);
+  const size_t kNumElements = data.size();
+  for (auto &element : data)
+    sum += element;
+  return sum / static_cast<T>(kNumElements);
+}
+
+template <class T> T GetNthPercentile(const std::vector<T> &data, int n) {
+  std::vector<T> temp_data_buffer = data;
+  sort(temp_data_buffer.begin(), temp_data_buffer.end());
+  const size_t kNumElements = data.size();
+  int rank = n * kNumElements;
+  if (rank % 100) {
+    rank = (rank / 100) + 1;
+  } else
+    rank /= 100;
+  --rank;
+  return temp_data_buffer[rank];
+}
+
+template <class T>
+std::vector<std::pair<T, double> > GetCDF(const std::vector<T> &data) {
+  int precision = 1;
+  std::vector<T> temp_data_buffer = data;
+  if (typeid(temp_data_buffer[0]) == typeid(double)||
+      typeid(temp_data_buffer[0]) == typeid(float)) {
+    precision = 1000;
+  }
+  std::map<int, int> cdf;
+  for (int i = 0; i < temp_data_buffer.size(); ++i) {
+    int bucket_index = temp_data_buffer[i] * precision;
+    if (cdf[bucket_index])
+      cdf[bucket_index]++;
+    else
+      cdf[bucket_index] = 1;
+  }
+  std::map<int, int>::iterator prev = cdf.begin(), current = cdf.begin();
+  current++;
+  for (; current != cdf.end(); current++, prev++) {
+    current->second += prev->second;
+  }
+  int total = temp_data_buffer.size();
+  std::vector<std::pair<T, double> > ret;
+  for (current = cdf.begin(); current != cdf.end(); ++current) {
+    T first = static_cast<T>(current->first) / static_cast<T>(precision);
+    double second =
+        static_cast<double>(current->second) / static_cast<double>(total);
+    ret.push_back(std::make_pair(first, second));
+  }
+  return ret;
+}
+#endif // UTIL_H_
