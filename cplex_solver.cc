@@ -1,5 +1,30 @@
 #include "cplex_solver.h"
 
+void PrintIloInt2dArray(IloInt2dArray &a, int dimension1, int dimension2,
+                        string name) {
+  DEBUG("%s\n", name.c_str());
+  for (int i = 0; i < dimension1; ++i) {
+    for (int j = 0; j < dimension2; ++j) {
+      DEBUG("%d ", a[i][j]);
+    }
+    DEBUG("\n");
+  }
+}
+
+void PrintIloInt3dArray(IloInt3dArray &a, int dimension1,
+                        int dimension2, int dimension3, string name) {
+  DEBUG("%s\n", name.c_str());
+  for (int i = 0; i < dimension1; ++i) {
+    DEBUG("dim1 = %d\n", i);
+    for (int j = 0; j < dimension2; ++j) {
+      for (int k = 0; k < dimension3; ++k) {
+        DEBUG("%d ", a[i][j][k]);
+      }
+      DEBUG("\n");
+    }
+    DEBUG("\n");
+  }
+}
 VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
     Graph *physical_topology, Graph *virt_topology,
     Graph *shadow_virt_topology) {
@@ -11,17 +36,17 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   physical_topology_ = physical_topology;
   virt_topology_ = virt_topology;
   shadow_virt_topology_ = shadow_virt_topology;
-  x_mn_uv_ = IloIntVar4dArray(
+  xmn_uv_ = IloIntVar4dArray(
       env_, virt_topology_->node_count() + shadow_virt_topology_->node_count());
   // Decision variable initialization for virtual network.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = virt_topology->at(m);
-    x_mn_uv_[m] = IloIntVar3dArray(env_, m_neighbors.size());
+    auto &m_neighbors = virt_topology->adj_list()->at(m);
+    xmn_uv_[m] = IloIntVar3dArray(env_, m_neighbors.size());
     for (int n = 0; n < m_neighbors.size(); ++n) {
-      x_mn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->size());
-      for (int u = 0; u < physical_topology_->size(); ++u) {
-        x_mn_uv_[m][n][u] =
-            IloIntVarArray(env_, physical_topology_->at(u).size());
+      xmn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->node_count());
+      for (int u = 0; u < physical_topology_->node_count(); ++u) {
+        xmn_uv_[m][n][u] =
+            IloIntVarArray(env_, physical_topology_->adj_list()->at(u).size());
       }
     }
   }
@@ -29,13 +54,13 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   // Decision variable initialization for shadow virtual network.
   int offset = virt_topology_->node_count();
   for (int m = offset; m < offset + shadow_virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = shadow_virt_topology->at(m - offset);
-    x_mn_uv_[m] = IloIntVar3dArray(env_, m_neighbors.size() + offset);
+    auto &m_neighbors = shadow_virt_topology->adj_list()->at(m - offset);
+    xmn_uv_[m] = IloIntVar3dArray(env_, m_neighbors.size() + offset);
     for (int n = 0; n < m_neighbors.size(); ++n) {
-      x_mn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->size());
-      for (int u = 0; u < physical_topology_->size(); ++u) {
-        x_mn_uv_[m][n][u] =
-            IloIntVarArray(env_, physical_topology_->at(u).size());
+      xmn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->node_count());
+      for (int u = 0; u < physical_topology_->node_count(); ++u) {
+        xmn_uv_[m][n][u] =
+            IloIntVarArray(env_, physical_topology_->adj_list()->at(u).size());
       }
     }
   }
@@ -43,18 +68,18 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
 
 void VNEProtectionCPLEXSolver::BuildModel() {
   // node_id offset for the shadow virtual topology.
-  int offset = virt_topology_->size();
+  int offset = virt_topology_->node_count();
 
   // Constraint: Capacity constraint of physical links.
   for (int u = 0; u < physical_topology_->node_count(); ++u) {
-    auto &u_neighbors = physical_topology_->at(u);
+    auto &u_neighbors = physical_topology_->adj_list()->at(u);
     for (auto &end_point : u_neighbors) {
       int v = end_point.node_id;
       int beta_uv = end_point.bandwidth;
       IloIntExpr sum(env_);
       IloIntExpr sum_shadow(env_);
       for (int m = 0; m < virt_topology_->node_count(); ++m) {
-        auto &m_neighbors = virt_topology_->at(m);
+        auto &m_neighbors = virt_topology_->adj_list()->at(m);
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
           int beta_mn = vend_point.bandwidth;
@@ -68,14 +93,14 @@ void VNEProtectionCPLEXSolver::BuildModel() {
   }
 
   // Constraint: Every virtual link is mapped to one or more physical links.
-  for (int m = 0; m < virt_topology_->size(); ++m) {
-    auto &m_neighbors = virt_topology_->at(m);
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
       IloIntExpr sum(env_);
       IloIntExpr sum_shadow(env_);
-      for (int u = 0; u < physical_topology_->size(); ++u) {
-        auto &u_neighbors = physical_topology_->at(u);
+      for (int u = 0; u < physical_topology_->node_count(); ++u) {
+        auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           sum += xmn_uv_[m][n][u][v];
@@ -89,13 +114,13 @@ void VNEProtectionCPLEXSolver::BuildModel() {
 
   // Objective function.
   IloExpr objective;
-  for (int m = 0; m < virt_topology_->size(); ++m) {
-    auto &m_neighbors = virt_topology_->at(m);
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
       long beta_mn = vend_point.bandwidth;
-      for (int u = 0; u < physical_topology_->size(); ++u) {
-        auto &u_neighbors = physical_topology_->at(u);
+      for (int u = 0; u < physical_topology_->node_count(); ++u) {
+        auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           int cost_uv = end_point.cost;
@@ -113,7 +138,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
 void VNEProtectionCPLEXSolver::Solve() {
   try {
     cplex_.solve();
-  } catch (IloException & e) {
+  }
+  catch (IloException & e) {
     printf("Exception caught: %s\n", e.getMessage());
   }
 }

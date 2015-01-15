@@ -1,3 +1,4 @@
+#include "cplex_solver.h"
 #include "datastructure.h"
 #include "io.h"
 #include "util.h"
@@ -24,6 +25,6 @@ int main(int argc, char *argv[]) {
   }
   auto physical_topology = InitializeTopologyFromFile(pn_topology_filename.c_str());
   auto virt_topology = InitializeTopologyFromFile(vn_topology_filename.c_str());
-  auto shadow_virt_topology = InitializeTopologyFromFile(vn_topology_filename, c_str());
+  auto shadow_virt_topology = InitializeTopologyFromFile(vn_topology_filename.c_str());
   return 0;
 }

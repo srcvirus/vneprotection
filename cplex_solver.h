@@ -5,7 +5,6 @@
 #include "util.h"
 
 #include <ilcplex/ilocplex.h>
-ILOSTLBEGIN;
 
 // Type definitions for holding upto 5-dimensional decision variables.
 typedef IloArray<IloIntVarArray> IloIntVar2dArray;
@@ -17,32 +16,13 @@ typedef IloArray<IloIntArray> IloInt2dArray;
 typedef IloArray<IloInt2dArray> IloInt3dArray;
 
 typedef IloArray<IloExprArray> IloExpr2dArray;
+using std::string;
 
-void PrintIloInt2dArray(IloInt2dArray &a, int dimension1, int dimension2,
-                        string name) {
-  DEBUG("%s\n", name.c_str());
-  for (int i = 0; i < dimension1; ++i) {
-    for (int j = 0; j < dimension2; ++j) {
-      DEBUG("%d ", a[i][j]);
-    }
-    DEBUG("\n");
-  }
-}
+void PrintIloInt2dArray(IloInt2dArray &a, int dimension1, 
+                        int dimension2, string name); 
 
 void PrintIloInt3dArray(IloInt3dArray &a, int dimension1, int dimension2,
-                        int dimension3, string name) {
-  DEBUG("%s\n", name.c_str());
-  for (int i = 0; i < dimension1; ++i) {
-    DEBUG("dim1 = %d\n", i);
-    for (int j = 0; j < dimension2; ++j) {
-      for (int k = 0; k < dimension3; ++k) {
-        DEBUG("%d ", a[i][j][k]);
-      }
-      DEBUG("\n");
-    }
-    DEBUG("\n");
-  }
-}
+                        int dimension3, string name);
 
 class VNEProtectionCPLEXSolver {
  public:
@@ -69,6 +49,6 @@ class VNEProtectionCPLEXSolver {
   Graph* virt_topology_;
   Graph* shadow_virt_topology_;
   // Decision variable for edge mapping.
-  IloIntVar4dArray xmn_uv_;(env, kTrafficCount);
+  IloIntVar4dArray xmn_uv_;
 };
 #endif // CPLEX_SOLVER_
