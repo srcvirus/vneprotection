@@ -18,37 +18,43 @@ typedef IloArray<IloInt2dArray> IloInt3dArray;
 typedef IloArray<IloExprArray> IloExpr2dArray;
 using std::string;
 
-void PrintIloInt2dArray(IloInt2dArray &a, int dimension1, 
-                        int dimension2, string name); 
+void PrintIloInt2dArray(IloInt2dArray &a, int dimension1, int dimension2,
+                        string name);
 
 void PrintIloInt3dArray(IloInt3dArray &a, int dimension1, int dimension2,
                         int dimension3, string name);
 
 class VNEProtectionCPLEXSolver {
- public:
-  VNEProtectionCPLEXSolver() { }
-  VNEProtectionCPLEXSolver(Graph* physical_topology, Graph* virt_topology,
-                           Graph* shadow_virt_topology);
+public:
+  VNEProtectionCPLEXSolver() {}
+  VNEProtectionCPLEXSolver(Graph *physical_topology, Graph *virt_topology,
+                           Graph *shadow_virt_topology);
 
-  IloEnv& env()  { return env_; }
-  IloModel& model() { return model_; }
-  IloCplex& cplex() { return cplex_; }
-  IloConstraintArray& constraints() { return constraints_; }
-  IloNumArray& preferences() { return preferences_; }
-  IloIntVar4dArray& xmn_uv() { return xmn_uv_; }
+  IloEnv &env() { return env_; }
+  IloModel &model() { return model_; }
+  IloCplex &cplex() { return cplex_; }
+  IloConstraintArray &constraints() { return constraints_; }
+  IloNumArray &preferences() { return preferences_; }
+  IloIntVar4dArray &x_mn_uv() { return x_mn_uv_; }
   void BuildModel();
   void Solve();
- private:
+
+private:
 
   IloEnv env_;
   IloModel model_;
   IloCplex cplex_;
   IloConstraintArray constraints_;
   IloNumArray preferences_;
-  Graph* physical_topology_;
-  Graph* virt_topology_;
-  Graph* shadow_virt_topology_;
+  Graph *physical_topology_;
+  Graph *virt_topology_;
+  Graph *shadow_virt_topology_;
   // Decision variable for edge mapping.
-  IloIntVar4dArray xmn_uv_;
+  IloIntVar4dArray x_mn_uv_;
+  // Decision variable for node mapping.
+  IloIntVar2dArray y_m_u_;
+  // Derived variable denoting if a virtual link originating at m is mapped to a
+  // physical path going through a physical node u.
+  IloIntVar2dArray eta_m_u_;
 };
 #endif // CPLEX_SOLVER_

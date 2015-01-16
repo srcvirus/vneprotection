@@ -65,8 +65,8 @@ std::unique_ptr<Graph> InitializeTopologyFromFile(const char *filename) {
     long bw = atol(row[5].c_str());
     int delay = atoi(row[6].c_str());
 
-    DEBUG("Line[%d]: u = %d, v = %d, cost = %d, bw = %ld, delay = %d\n",
-          i, u, v, cost, bw, delay);
+    DEBUG("Line[%d]: u = %d, v = %d, cost = %d, bw = %ld, delay = %d\n", i, u,
+          v, cost, bw, delay);
     graph->add_edge(u, v, bw, delay, cost);
   }
   fclose(file_ptr);

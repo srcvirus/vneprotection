@@ -3,10 +3,9 @@
 #include "io.h"
 #include "util.h"
 
-const std::string kUsage = 
-  "./vne_protection "
-  "--pn_topology_file=<pn_topology_file>\n\t"
-  "--vn_topology_file=<vn_topology_file>";
+const std::string kUsage = "./vne_protection "
+                           "--pn_topology_file=<pn_topology_file>\n\t"
+                           "--vn_topology_file=<vn_topology_file>";
 
 int main(int argc, char *argv[]) {
   using std::string;
@@ -23,8 +22,10 @@ int main(int argc, char *argv[]) {
       return 1;
     }
   }
-  auto physical_topology = InitializeTopologyFromFile(pn_topology_filename.c_str());
+  auto physical_topology =
+      InitializeTopologyFromFile(pn_topology_filename.c_str());
   auto virt_topology = InitializeTopologyFromFile(vn_topology_filename.c_str());
-  auto shadow_virt_topology = InitializeTopologyFromFile(vn_topology_filename.c_str());
+  auto shadow_virt_topology =
+      InitializeTopologyFromFile(vn_topology_filename.c_str());
   return 0;
 }
