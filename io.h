@@ -53,14 +53,13 @@ std::unique_ptr<Graph> InitializeTopologyFromFile(const char *filename) {
   int node_count = 0, edge_count = 0;
   auto csv_vector = ReadCSVFile(filename);
   std::unique_ptr<Graph> graph(new Graph());
-  // 0th row contains column headers. Skip the first row.
-  for (int i = 1; i < csv_vector->size(); ++i) {
+  for (int i = 0; i < csv_vector->size(); ++i) {
     auto &row = csv_vector->at(i);
 
     // Each line has the following format:
     // LinkID, SourceID, DestinationID, PeerID, Cost, Bandwidth, Delay.
-    int u = atoi(row[1].c_str()) - 1;
-    int v = atoi(row[2].c_str()) - 1;
+    int u = atoi(row[1].c_str());
+    int v = atoi(row[2].c_str());
     int cost = atoi(row[4].c_str());
     long bw = atol(row[5].c_str());
     int delay = atoi(row[6].c_str());

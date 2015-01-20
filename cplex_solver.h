@@ -37,7 +37,7 @@ public:
   IloNumArray &preferences() { return preferences_; }
   IloIntVar4dArray &x_mn_uv() { return x_mn_uv_; }
   void BuildModel();
-  void Solve();
+  bool Solve();
 
 private:
 
@@ -56,5 +56,7 @@ private:
   // Derived variable denoting if a virtual link originating at m is mapped to a
   // physical path going through a physical node u.
   IloIntVar2dArray eta_m_u_;
+  // Objective function.
+  IloExpr objective_;
 };
 #endif // CPLEX_SOLVER_

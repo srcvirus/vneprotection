@@ -33,48 +33,31 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   cplex_ = IloCplex(model_);
   constraints_ = IloConstraintArray(env_);
   preferences_ = IloNumArray(env_);
+  objective_ = IloExpr(env_);
 
   physical_topology_ = physical_topology;
   virt_topology_ = virt_topology;
   shadow_virt_topology_ = shadow_virt_topology;
-  x_mn_uv_ = IloIntVar4dArray(
-      env_, virt_topology_->node_count() + shadow_virt_topology_->node_count());
-  y_m_u_ = IloIntVar2dArray(
-      env_, virt_topology_->node_count() + shadow_virt_topology_->node_count());
-  eta_m_u_ = IloIntVar2dArray(
-      env_, virt_topology_->node_count() + shadow_virt_topology_->node_count());
+  x_mn_uv_ = IloIntVar4dArray(env_, virt_topology_->node_count() * 2);
+  y_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
+  eta_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
 
-  // Decision variable initialization for virtual network.
-  for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = virt_topology->adj_list()->at(m);
-    x_mn_uv_[m] = IloIntVar3dArray(env_, m_neighbors.size());
-    for (int n = 0; n < m_neighbors.size(); ++n) {
+  // Decision variable initialization for virtual network and shadow virtual
+  // network.
+  for (int m = 0; m < virt_topology_->node_count() * 2; ++m) {
+    // Multiply by two for the double number of nodes when considering the
+    // shadow network.
+    x_mn_uv_[m] = IloIntVar3dArray(env_, virt_topology_->node_count() * 2);
+
+    for (int n = 0; n < virt_topology_->node_count() * 2; ++n) {
       x_mn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->node_count());
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         x_mn_uv_[m][n][u] = IloIntVarArray(
-            env_, physical_topology_->adj_list()->at(u).size(), 0, 1);
+            env_, physical_topology_->node_count(), 0, 1);
       }
     }
   }
-  for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    y_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
-    eta_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
-  }
-
-  // Decision variable initialization for shadow virtual network.
-  int offset = virt_topology_->node_count();
-  for (int m = offset; m < offset + shadow_virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = shadow_virt_topology->adj_list()->at(m - offset);
-    x_mn_uv_[m] = IloIntVar3dArray(env_, m_neighbors.size() + offset);
-    for (int n = 0; n < m_neighbors.size(); ++n) {
-      x_mn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->node_count());
-      for (int u = 0; u < physical_topology_->node_count(); ++u) {
-        x_mn_uv_[m][n][u] = IloIntVarArray(
-            env_, physical_topology_->adj_list()->at(u).size(), 0, 1);
-      }
-    }
-  }
-  for (int m = offset; m < offset + shadow_virt_topology_->node_count(); ++m) {
+  for (int m = 0; m < virt_topology_->node_count() * 2; ++m) {
     y_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
     eta_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
   }
@@ -94,6 +77,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         int n = vend_point.node_id;
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
+          DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
           sum += x_mn_uv_[m][n][u][v];
         }
       }
@@ -114,6 +98,9 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
           int beta_mn = vend_point.bandwidth;
+          DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
+          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n",
+                u, v, m + offset, n + offset);
           sum += x_mn_uv_[m][n][u][v] * beta_mn;
           sum_shadow = x_mn_uv_[m + offset][n + offset][u][v] * beta_mn;
         }
@@ -134,6 +121,9 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
+          DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
+          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n",
+                u, v, m + offset, n + offset);
           sum += x_mn_uv_[m][n][u][v];
           sum_shadow += x_mn_uv_[m + offset][n + offset][u][v];
         }
@@ -147,7 +137,9 @@ void VNEProtectionCPLEXSolver::BuildModel() {
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     IloIntExpr sum(env_);
     IloIntExpr sum_shadow(env_);
-    for (int u = 0; u < physical_topology_->node_count(); ++m) {
+    for (int u = 0; u < physical_topology_->node_count(); ++u) {
+      DEBUG("u = %d, m = %d,\n", u, m);
+      DEBUG("u = %d, m + offset = %d\n", u, m + offset);
       sum += y_m_u_[m][u];
       sum_shadow += y_m_u_[m + offset][u];
     }
@@ -159,6 +151,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
   for (int u = 0; u < physical_topology_->node_count(); ++u) {
     IloIntExpr sum(env_);
     for (int m = 0; m < virt_topology_->node_count(); ++m) {
+      DEBUG("u = %d, m = %d,\n", u, m);
+      DEBUG("u = %d, m + offset = %d\n", u, m + offset);
       sum += y_m_u_[m][u];
       sum += y_m_u_[m + offset][u];
     }
@@ -176,12 +170,15 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         IloIntExpr sum(env_);
+        IloIntExpr sum_shadow(env_);
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           sum += (x_mn_uv_[m][n][u][v] - x_mn_uv_[m][n][v][u]);
+          sum_shadow += (x_mn_uv_[m + offset][n + offset][u][v] - x_mn_uv_[m + offset][n + offset][v][u]);
         }
         model_.add(sum == (y_m_u_[m][u] - y_m_u_[n][u]));
+        model_.add(sum_shadow == (y_m_u_[m + offset][u] - y_m_u_[n + offset][u]));
       }
     }
   }
@@ -223,7 +220,6 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     }
   }
   // Objective function.
-  IloExpr objective;
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
@@ -234,22 +230,22 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           int cost_uv = end_point.cost;
-          objective += (x_mn_uv_[m][n][u][v] * cost_uv * beta_mn);
-          objective +=
-              (x_mn_uv_[m + offset][v + offset][u][v] * cost_uv * beta_mn);
+          DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
+          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n",
+                u, v, m + offset, n + offset);
+          objective_ += (x_mn_uv_[m][n][u][v] * cost_uv * beta_mn);
+          objective_ +=
+              (x_mn_uv_[m + offset][n + offset][u][v] * cost_uv * beta_mn);
         }
       }
     }
   }
-  model_.add(objective >= 0);
-  model_.add(IloMinimize(env_, objective));
+  model_.add(objective_ >= 0);
+  model_.add(IloMinimize(env_, objective_));
 }
 
-void VNEProtectionCPLEXSolver::Solve() {
-  try {
-    cplex_.solve();
-  }
-  catch (IloException & e) {
-    printf("Exception caught: %s\n", e.getMessage());
-  }
+bool VNEProtectionCPLEXSolver::Solve() {
+  // TODO(shihab): Tune parameters of CPLEX solver.
+  cplex_.setOut(env_.getNullStream());
+  return cplex_.solve();
 }

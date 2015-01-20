@@ -3,6 +3,8 @@
 #include "io.h"
 #include "util.h"
 
+#include <iostream>
+
 const std::string kUsage = "./vne_protection "
                            "--pn_topology_file=<pn_topology_file>\n\t"
                            "--vn_topology_file=<vn_topology_file>";
@@ -24,8 +26,25 @@ int main(int argc, char *argv[]) {
   }
   auto physical_topology =
       InitializeTopologyFromFile(pn_topology_filename.c_str());
+  DEBUG(physical_topology->GetDebugString().c_str());
   auto virt_topology = InitializeTopologyFromFile(vn_topology_filename.c_str());
+  DEBUG(virt_topology->GetDebugString().c_str());
   auto shadow_virt_topology =
       InitializeTopologyFromFile(vn_topology_filename.c_str());
+  DEBUG(shadow_virt_topology->GetDebugString().c_str());
+  auto vne_cplex_solver = std::unique_ptr<VNEProtectionCPLEXSolver>(
+                            new VNEProtectionCPLEXSolver(
+                              physical_topology.get(),
+                              virt_topology.get(),
+                              shadow_virt_topology.get()));
+  try {
+    vne_cplex_solver->BuildModel();
+    if(!vne_cplex_solver->Solve()) {
+      auto& cplex = vne_cplex_solver->cplex();
+      std::cout << "Solution status: " << cplex.getStatus() << std::endl;
+    }
+  } catch (IloException &e) {
+    printf("Exception thrown: %s\n", e.getMessage());
+  }
   return 0;
 }
