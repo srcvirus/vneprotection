@@ -52,8 +52,8 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
     for (int n = 0; n < virt_topology_->node_count() * 2; ++n) {
       x_mn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->node_count());
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
-        x_mn_uv_[m][n][u] = IloIntVarArray(
-            env_, physical_topology_->node_count(), 0, 1);
+        x_mn_uv_[m][n][u] =
+            IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
       }
     }
   }
@@ -99,8 +99,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
           int n = vend_point.node_id;
           int beta_mn = vend_point.bandwidth;
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
-          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n",
-                u, v, m + offset, n + offset);
+          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
+                m + offset, n + offset);
           sum += x_mn_uv_[m][n][u][v] * beta_mn;
           sum_shadow = x_mn_uv_[m + offset][n + offset][u][v] * beta_mn;
         }
@@ -122,8 +122,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
-          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n",
-                u, v, m + offset, n + offset);
+          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
+                m + offset, n + offset);
           sum += x_mn_uv_[m][n][u][v];
           sum_shadow += x_mn_uv_[m + offset][n + offset][u][v];
         }
@@ -175,10 +175,12 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           sum += (x_mn_uv_[m][n][u][v] - x_mn_uv_[m][n][v][u]);
-          sum_shadow += (x_mn_uv_[m + offset][n + offset][u][v] - x_mn_uv_[m + offset][n + offset][v][u]);
+          sum_shadow += (x_mn_uv_[m + offset][n + offset][u][v] -
+                         x_mn_uv_[m + offset][n + offset][v][u]);
         }
         model_.add(sum == (y_m_u_[m][u] - y_m_u_[n][u]));
-        model_.add(sum_shadow == (y_m_u_[m + offset][u] - y_m_u_[n + offset][u]));
+        model_.add(sum_shadow ==
+                   (y_m_u_[m + offset][u] - y_m_u_[n + offset][u]));
       }
     }
   }
@@ -231,8 +233,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
           int v = end_point.node_id;
           int cost_uv = end_point.cost;
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
-          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n",
-                u, v, m + offset, n + offset);
+          DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
+                m + offset, n + offset);
           objective_ += (x_mn_uv_[m][n][u][v] * cost_uv * beta_mn);
           objective_ +=
               (x_mn_uv_[m + offset][n + offset][u][v] * cost_uv * beta_mn);

@@ -33,17 +33,16 @@ int main(int argc, char *argv[]) {
       InitializeTopologyFromFile(vn_topology_filename.c_str());
   DEBUG(shadow_virt_topology->GetDebugString().c_str());
   auto vne_cplex_solver = std::unique_ptr<VNEProtectionCPLEXSolver>(
-                            new VNEProtectionCPLEXSolver(
-                              physical_topology.get(),
-                              virt_topology.get(),
-                              shadow_virt_topology.get()));
+      new VNEProtectionCPLEXSolver(physical_topology.get(), virt_topology.get(),
+                                   shadow_virt_topology.get()));
   try {
     vne_cplex_solver->BuildModel();
-    if(!vne_cplex_solver->Solve()) {
-      auto& cplex = vne_cplex_solver->cplex();
+    if (!vne_cplex_solver->Solve()) {
+      auto &cplex = vne_cplex_solver->cplex();
       std::cout << "Solution status: " << cplex.getStatus() << std::endl;
     }
-  } catch (IloException &e) {
+  }
+  catch (IloException & e) {
     printf("Exception thrown: %s\n", e.getMessage());
   }
   return 0;
