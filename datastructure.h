@@ -13,7 +13,6 @@
 #define INF 99999999
 #define MAXN 1000
 #define NIL -1
-#define EPS 1e-9
 
 // An entry in an adjacent list. An entry contains the node_id of the endpoint.
 // The entry contains bandwidth, residual bandwidth, delay and cost of the
