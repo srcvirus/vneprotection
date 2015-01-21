@@ -4,7 +4,7 @@ INCLUDE_PATHS = -I/opt/ibm/ILOG/CPLEX_Studio125/cplex/include -I/opt/ibm/ILOG/CP
 
 LIBS = -lilocplex -lconcert -lcplex -lm -lpthread  -DIL_STD
 
-FILES = vne_protection.cc cplex_solver.cc util.cc
+FILES = vne_protection.cc cplex_solver.cc util.cc vne_solution_builder.cc
 
 all:
 	g++ -O2 -std=c++0x $(LIB_PATHS) $(INCLUDE_PATHS) $(FILES) $(LIBS) -o vne_protection

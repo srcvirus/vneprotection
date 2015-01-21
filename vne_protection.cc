@@ -2,6 +2,7 @@
 #include "datastructure.h"
 #include "io.h"
 #include "util.h"
+#include "vne_solution_builder.h"
 
 #include <iostream>
 
@@ -36,10 +37,24 @@ int main(int argc, char *argv[]) {
       new VNEProtectionCPLEXSolver(physical_topology.get(), virt_topology.get(),
                                    shadow_virt_topology.get()));
   try {
+    auto& cplex_env = vne_cplex_solver->env();
+    IloTimer timer(cplex_env);
+    timer.reset();
     vne_cplex_solver->BuildModel();
-    if (!vne_cplex_solver->Solve()) {
+    bool is_success = vne_cplex_solver->Solve();
+    timer.stop();
+    if (!is_success) {
       auto &cplex = vne_cplex_solver->cplex();
       std::cout << "Solution status: " << cplex.getStatus() << std::endl;
+    } else {
+      double running_time = timer.getTime();
+      printf("Run successfully completed in %.3lf seconds\n", running_time);
+      auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
+                                new VNESolutionBuilder(vne_cplex_solver.get(),                               
+                                                       physical_topology.get(),
+                                                       virt_topology.get()));
+      solution_builder->PrintNodeMapping();
+      solution_builder->PrintEdgeMapping();
     }
   }
   catch (IloException & e) {

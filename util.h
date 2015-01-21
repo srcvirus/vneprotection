@@ -1,7 +1,12 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include <vector>
+#include <utility>
+
 #define ONE_GIG 1000000000ULL
+#define EPS 1e-9
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__) " "

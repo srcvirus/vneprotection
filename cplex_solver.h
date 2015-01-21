@@ -36,6 +36,8 @@ public:
   IloConstraintArray &constraints() { return constraints_; }
   IloNumArray &preferences() { return preferences_; }
   IloIntVar4dArray &x_mn_uv() { return x_mn_uv_; }
+  IloIntVar2dArray &y_m_u() { return y_m_u_; }
+  IloExpr &objective() { return objective_; }
   void BuildModel();
   bool Solve();
 
