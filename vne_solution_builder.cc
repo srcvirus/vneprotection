@@ -34,7 +34,7 @@ void VNESolutionBuilder::PrintNodeMapping() {
   auto& y_m_u = vne_solver_ptr_->y_m_u();
   int offset = virt_topology_->node_count();
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    for (int u = 0; u < physical_topology_->node_count(); ++m) {
+    for (int u = 0; u < physical_topology_->node_count(); ++u) {
       if (fabs(cplex.getValue(y_m_u[m][u]) - 1) < EPS) {
         printf("Virtual node %d --> physical node %d\n", m, u);
       }

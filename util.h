@@ -5,7 +5,7 @@
 #include <utility>
 
 #define ONE_GIG 1000000000ULL
-#define EPS 1e-9
+#define EPS 1e-8
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
