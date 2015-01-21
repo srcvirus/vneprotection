@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
       new VNEProtectionCPLEXSolver(physical_topology.get(), virt_topology.get(),
                                    shadow_virt_topology.get()));
   try {
-    auto& cplex_env = vne_cplex_solver->env();
+    auto &cplex_env = vne_cplex_solver->env();
     IloTimer timer(cplex_env);
     timer.reset();
     vne_cplex_solver->BuildModel();
@@ -50,9 +50,8 @@ int main(int argc, char *argv[]) {
       double running_time = timer.getTime();
       printf("Run successfully completed in %.3lf seconds\n", running_time);
       auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
-                                new VNESolutionBuilder(vne_cplex_solver.get(),                               
-                                                       physical_topology.get(),
-                                                       virt_topology.get()));
+          new VNESolutionBuilder(vne_cplex_solver.get(),
+                                 physical_topology.get(), virt_topology.get()));
       solution_builder->PrintCost();
       solution_builder->PrintWorkingNodeMapping();
       solution_builder->PrintWorkingEdgeMapping();
