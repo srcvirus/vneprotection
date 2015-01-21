@@ -67,44 +67,6 @@ void VNEProtectionCPLEXSolver::BuildModel() {
   // node_id offset for the shadow virtual topology.
   int offset = virt_topology_->node_count();
 
-  // Connstraint: x_mn_uv_[m][n][u][v] can be 1 for only m > n
-  for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = virt_topology_->adj_list()->at(m);
-    for (auto &vend_point : m_neighbors) {
-      int n = vend_point.node_id;
-      for (int u = 0; u < physical_topology_->node_count(); ++u) {
-        auto &u_neighbors = physical_topology_->adj_list()->at(u);
-        for (auto &end_point : u_neighbors) {
-          int v = end_point.node_id;
-          if (m < n) {
-            model_.add(x_mn_uv_[m][n][u][v] == 0);
-            model_.add(x_mn_uv_[m + offset][n + offset][u][v] == 0);
-          }
-        }
-      }
-    }
-  }
-
-  // Constraint: A virtual link cannot map to both directions of a physical
-  // link.
-  /*
-  for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = virt_topology_->adj_list()->at(m);
-    for (auto &vend_point : m_neighbors) {
-      int n = vend_point.node_id;
-      for (int u = 0; u < physical_topology_->node_count(); ++u) {
-        auto &u_neighbors = physical_topology_->adj_list()->at(u);
-        for (auto &end_point : u_neighbors) {
-          int v = end_point.node_id;
-          model_.add(x_mn_uv_[m][n][u][v] + x_mn_uv_[m][n][v][u] <= 1);
-          model_.add(x_mn_uv_[m + offset][n + offset][u][v] +
-                         x_mn_uv_[m + offset][n + offset][v][u] <=
-                     1);
-        }
-      }
-    }
-  }
-  */
   // Constraint: Define eta using constraint on x_mn_uv_
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);

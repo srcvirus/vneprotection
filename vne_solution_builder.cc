@@ -10,6 +10,8 @@ void VNESolutionBuilder::PrintWorkingEdgeMapping() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
+      if (m < n)
+        continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
@@ -32,6 +34,8 @@ void VNESolutionBuilder::PrintShadowEdgeMapping() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
+      if (m < n) 
+        continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
