@@ -38,17 +38,13 @@ int main(int argc, char *argv[]) {
                                    shadow_virt_topology.get()));
   try {
     auto &cplex_env = vne_cplex_solver->env();
-    IloTimer timer(cplex_env);
-    timer.restart();
     vne_cplex_solver->BuildModel();
     bool is_success = vne_cplex_solver->Solve();
-    timer.stop();
     if (!is_success) {
       auto &cplex = vne_cplex_solver->cplex();
       std::cout << "Solution status: " << cplex.getStatus() << std::endl;
     } else {
-      double running_time = timer.getTime();
-      printf("Run successfully completed in %.3lf seconds\n", running_time);
+      printf("Run successfully completed.\n");
       auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
           new VNESolutionBuilder(vne_cplex_solver.get(),
                                  physical_topology.get(), virt_topology.get()));
