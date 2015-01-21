@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   try {
     auto &cplex_env = vne_cplex_solver->env();
     IloTimer timer(cplex_env);
-    timer.reset();
+    timer.restart();
     vne_cplex_solver->BuildModel();
     bool is_success = vne_cplex_solver->Solve();
     timer.stop();

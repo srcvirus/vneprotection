@@ -42,8 +42,8 @@ void VNESolutionBuilder::PrintShadowEdgeMapping() {
           int v = end_point.node_id;
           if (fabs(cplex.getValue(x_mn_uv[m + offset][n + offset][u][v]) - 1) <
               EPS) {
-            printf("Shadow virtual edge (%d, %d) --> physical edge (%d, %d)\n",
-                   m + offset, n + offset, u, v);
+            printf("Shadow virtual edge of (%d, %d) --> physical edge (%d, %d)\n",
+                   m, n, u, v);
           }
         }
       }
@@ -70,7 +70,7 @@ void VNESolutionBuilder::PrintShadowNodeMapping() {
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     for (int u = 0; u < physical_topology_->node_count(); ++u) {
       if (fabs(cplex.getValue(y_m_u[m + offset][u]) - 1) < EPS) {
-        printf("Shadow virtual node %d --> physical node %d\n", m, u);
+        printf("Shadow virtual node of %d --> physical node %d\n", m, u);
       }
     }
   }
