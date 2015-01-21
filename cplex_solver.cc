@@ -166,8 +166,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
-      if (m < n)
-        continue;
+      // if (m < n)
+      //  continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         IloIntExpr sum(env_);
         IloIntExpr sum_shadow(env_);
