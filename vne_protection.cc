@@ -53,8 +53,11 @@ int main(int argc, char *argv[]) {
                                 new VNESolutionBuilder(vne_cplex_solver.get(),                               
                                                        physical_topology.get(),
                                                        virt_topology.get()));
-      solution_builder->PrintNodeMapping();
-      solution_builder->PrintEdgeMapping();
+      solution_builder->PrintCost();
+      solution_builder->PrintWorkingNodeMapping();
+      solution_builder->PrintWorkingEdgeMapping();
+      solution_builder->PrintShadowNodeMapping();
+      solution_builder->PrintShadowEdgeMapping();
     }
   }
   catch (IloException & e) {

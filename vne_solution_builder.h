@@ -12,8 +12,11 @@ class VNESolutionBuilder {
         physical_topology_(physical_topology),
         virt_topology_(virt_topology) { }
 
-    void PrintEdgeMapping();
-    void PrintNodeMapping();
+    void PrintWorkingEdgeMapping();
+    void PrintShadowEdgeMapping();
+    void PrintWorkingNodeMapping();
+    void PrintShadowNodeMapping();
+    void PrintCost();
   private:
     VNEProtectionCPLEXSolver* vne_solver_ptr_;
     Graph* physical_topology_;
