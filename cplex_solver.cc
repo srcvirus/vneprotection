@@ -248,7 +248,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
 
 bool VNEProtectionCPLEXSolver::Solve() {
   // TODO(shihab): Tune parameters of CPLEX solver.
-  cplex_.setParam(IloCplex::Threads, 32);
+  cplex_.setParam(IloCplex::Threads, 64);
 
   bool is_success = cplex_.solve();
   return is_success;
