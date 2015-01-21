@@ -87,6 +87,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
 
   // Constraint: A virtual link cannot map to both directions of a physical
   // link.
+  /*
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
@@ -103,7 +104,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       }
     }
   }
-
+  */
   // Constraint: Define eta using constraint on x_mn_uv_
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
