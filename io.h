@@ -24,8 +24,8 @@ std::unique_ptr<std::map<std::string, std::string> > ParseArgs(int argc,
   return std::move(arg_map);
 }
 
-std::unique_ptr<std::vector<std::vector<std::string> > >
-ReadCSVFile(const char *filename) {
+std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
+    const char *filename) {
   DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   const static int kBufferSize = 1024;
@@ -70,8 +70,8 @@ std::unique_ptr<Graph> InitializeTopologyFromFile(const char *filename) {
   return std::move(graph);
 }
 
-std::unique_ptr<std::vector<std::vector<int> > >
-InitializeVNLocationsFromFile(const char *filename, int num_virtual_nodes) {
+std::unique_ptr<std::vector<std::vector<int> > > InitializeVNLocationsFromFile(
+    const char *filename, int num_virtual_nodes) {
   DEBUG("Parsing %s\n", filename);
   auto ret_vector = std::unique_ptr<std::vector<std::vector<int> > >(
       new std::vector<std::vector<int> >(num_virtual_nodes));
@@ -86,4 +86,4 @@ InitializeVNLocationsFromFile(const char *filename, int num_virtual_nodes) {
   return std::move(ret_vector);
 }
 
-#endif // IO_H_
+#endif  // IO_H_

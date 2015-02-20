@@ -25,7 +25,7 @@ void PrintIloInt3dArray(IloInt3dArray &a, int dimension1, int dimension2,
                         int dimension3, string name);
 
 class VNEProtectionCPLEXSolver {
-public:
+ public:
   VNEProtectionCPLEXSolver() {}
   VNEProtectionCPLEXSolver(Graph *physical_topology, Graph *virt_topology,
                            Graph *shadow_virt_topology,
@@ -42,7 +42,7 @@ public:
   void BuildModel();
   bool Solve();
 
-private:
+ private:
 
   IloEnv env_;
   IloModel model_;
@@ -65,4 +65,4 @@ private:
   // Objective function.
   IloExpr objective_;
 };
-#endif // CPLEX_SOLVER_
+#endif  // CPLEX_SOLVER_

@@ -36,13 +36,12 @@ int main(int argc, char *argv[]) {
   auto shadow_virt_topology =
       InitializeTopologyFromFile(vn_topology_filename.c_str());
   DEBUG(shadow_virt_topology->GetDebugString().c_str());
-  auto location_constraints = 
-    InitializeVNLocationsFromFile(location_constraint_filename.c_str(),
-                                  virt_topology->node_count());
-  auto vne_cplex_solver = std::unique_ptr<VNEProtectionCPLEXSolver>(
-      new VNEProtectionCPLEXSolver(physical_topology.get(), virt_topology.get(),
-                                   shadow_virt_topology.get(),
-                                   location_constraints.get()));
+  auto location_constraints = InitializeVNLocationsFromFile(
+      location_constraint_filename.c_str(), virt_topology->node_count());
+  auto vne_cplex_solver =
+      std::unique_ptr<VNEProtectionCPLEXSolver>(new VNEProtectionCPLEXSolver(
+          physical_topology.get(), virt_topology.get(),
+          shadow_virt_topology.get(), location_constraints.get()));
   try {
     auto &cplex_env = vne_cplex_solver->env();
     vne_cplex_solver->BuildModel();
@@ -56,10 +55,14 @@ int main(int argc, char *argv[]) {
           new VNESolutionBuilder(vne_cplex_solver.get(),
                                  physical_topology.get(), virt_topology.get()));
       solution_builder->PrintCost((pn_topology_filename + ".cost").c_str());
-      solution_builder->PrintWorkingNodeMapping((pn_topology_filename + ".nmap").c_str());
-      solution_builder->PrintWorkingEdgeMapping((pn_topology_filename + ".emap").c_str());
-      solution_builder->PrintShadowNodeMapping((pn_topology_filename + ".snmap").c_str());
-      solution_builder->PrintShadowEdgeMapping((pn_topology_filename + ".semap").c_str());
+      solution_builder->PrintWorkingNodeMapping((pn_topology_filename + ".nmap")
+                                                    .c_str());
+      solution_builder->PrintWorkingEdgeMapping((pn_topology_filename + ".emap")
+                                                    .c_str());
+      solution_builder->PrintShadowNodeMapping((pn_topology_filename + ".snmap")
+                                                   .c_str());
+      solution_builder->PrintShadowEdgeMapping((pn_topology_filename + ".semap")
+                                                   .c_str());
     }
   }
   catch (IloException & e) {

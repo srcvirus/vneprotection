@@ -22,16 +22,18 @@
 void PrintDebugMessage(const char *location, const char *fmt_string, ...);
 
 // Returns the mean of the vector of data.
-template <class T> double GetMean(const std::vector<T> &data);
+template <class T>
+double GetMean(const std::vector<T> &data);
 
 // Returns the Nth percentile of the vector of data. Nth percentile is
 // calculated as the (ceil(N / 100) * data.size() - 1)-th element from an array
 // obtained by sorting data.
-template <class T> T GetNthPercentile(const std::vector<T> &data, int n);
+template <class T>
+T GetNthPercentile(const std::vector<T> &data, int n);
 
 // Returns the Cumalitive Distribution Frequence of the data items sotred in
 // data. If the data items sotred in data are of type double, then a precision
 // of 3 digits after the decimal points is used.
 template <class T>
 std::vector<std::pair<T, double> > GetCDF(const std::vector<T> &data);
-#endif // UTIL_H_
+#endif  // UTIL_H_

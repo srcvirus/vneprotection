@@ -72,7 +72,7 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
       l_m_u_[m + offset][u] = 0;
     }
     auto loc_constraints = location_constraint_->at(m);
-    for (auto& u : loc_constraints) {
+    for (auto &u : loc_constraints) {
       l_m_u_[m][u] = 1;
       l_m_u_[m + offset][u] = 1;
     }
@@ -100,7 +100,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       model_.add(IloIfThen(env_, sum >= 1, eta_m_u_[m][u] == 1));
     }
   }
-  
+
   // Constraint: Location constraint of virtual nodes.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     for (int u = 0; u < physical_topology_->node_count(); ++u) {
