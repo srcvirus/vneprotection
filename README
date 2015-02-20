@@ -13,10 +13,12 @@ How to run
 ----------
 $ make
 $ ./vne_protection --pn_topology_file=<physical_network_topology>\ 
-                   --vn_topology_file=<virtual_network_topology>
+                   --vn_topology_file=<virtual_network_topology>\
+                   --location_constraint_file=<location_constraint_file>
 
 Two example physical (test_pn.topo) and virtual (test_vn.topo) network topology
-files are provided with the distribution. 
+files are provided with the distribution. A sample location constraint file is
+provided as well (test_location.txt).
 
 Input file format
 -----------------
@@ -35,6 +37,22 @@ Where,
   Delay = Latency of a physical link. In case of virtual link, this is the
           maximum delay requirement for the virtual link.
 
+A location constraint file contains as many lines as the number of virtual
+nodes. Each line is a comma separated list of values. The first value indicates
+the id of a virtual node followed by the ids of physical nodes where this
+virtual node can be mapped.
+
 *Nodes are numberded from 0 ... (n - 1) in a network with n nodes.
 
+Output Files
+------------
+Currently the solver prints output to the standard output and writes them to
+different output files as well. Each output file is prefixed with the
+physical topology file name and has the following suffixes based on the
+contents:
 
+.cost = solution cost
+.nmap = node mapping
+.emap = edge mapping
+.snmap = shadow node mapping
+.semap = shadwo edge mapping
