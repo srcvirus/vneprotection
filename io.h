@@ -72,6 +72,7 @@ std::unique_ptr<Graph> InitializeTopologyFromFile(const char *filename) {
 
 std::unique_ptr<std::vector<std::vector<int> > >
 InitializeVNLocationsFromFile(const char *filename, int num_virtual_nodes) {
+  DEBUG("Parsing %s\n", filename);
   auto ret_vector = std::unique_ptr<std::vector<std::vector<int> > >(
       new std::vector<std::vector<int> >(num_virtual_nodes));
   auto csv_vector = ReadCSVFile(filename);

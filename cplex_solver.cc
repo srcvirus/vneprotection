@@ -27,8 +27,8 @@ void PrintIloInt3dArray(IloInt3dArray &a, int dimension1, int dimension2,
 }
 
 VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
-    Graph *physical_topology, Graph *virt_topology,
-    Graph *shadow_virt_topology) {
+    Graph *physical_topology, Graph *virt_topology, Graph *shadow_virt_topology,
+    std::vector<std::vector<int>> *location_constraint) {
   model_ = IloModel(env_);
   cplex_ = IloCplex(model_);
   constraints_ = IloConstraintArray(env_);
@@ -38,9 +38,11 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   physical_topology_ = physical_topology;
   virt_topology_ = virt_topology;
   shadow_virt_topology_ = shadow_virt_topology;
+  location_constraint_ = location_constraint;
   x_mn_uv_ = IloIntVar4dArray(env_, virt_topology_->node_count() * 2);
   y_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
   eta_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
+  l_m_u_ = IloInt2dArray(env_, virt_topology_->node_count() * 2);
 
   // Decision variable initialization for virtual network and shadow virtual
   // network.
@@ -60,6 +62,20 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   for (int m = 0; m < virt_topology_->node_count() * 2; ++m) {
     y_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
     eta_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
+    l_m_u_[m] = IloIntArray(env_, physical_topology_->node_count(), 0, 1);
+  }
+
+  int offset = virt_topology_->node_count();
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    for (int u = 0; u < physical_topology_->node_count(); ++u) {
+      l_m_u_[m][u] = 0;
+      l_m_u_[m + offset][u] = 0;
+    }
+    auto loc_constraints = location_constraint_->at(m);
+    for (auto& u : loc_constraints) {
+      l_m_u_[m][u] = 1;
+      l_m_u_[m + offset][u] = 1;
+    }
   }
 }
 
@@ -82,6 +98,14 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         }
       }
       model_.add(IloIfThen(env_, sum >= 1, eta_m_u_[m][u] == 1));
+    }
+  }
+  
+  // Constraint: Location constraint of virtual nodes.
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    for (int u = 0; u < physical_topology_->node_count(); ++u) {
+      model_.add(y_m_u_[m][u] <= l_m_u_[m][u]);
+      model_.add(y_m_u_[m + offset][u] <= l_m_u_[m + offset][u]);
     }
   }
 
@@ -166,8 +190,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
-      if (m < n)
-        continue;
+      if (m < n) continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         IloIntExpr sum(env_);
         IloIntExpr sum_shadow(env_);
