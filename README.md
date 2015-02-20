@@ -52,8 +52,8 @@ different output files as well. Each output file is prefixed with the
 physical topology file name and has the following suffixes based on the
 contents:
 
-.cost = solution cost
-.nmap = node mapping
-.emap = edge mapping
-.snmap = shadow node mapping
-.semap = shadwo edge mapping
+* .cost = solution cost
+* .nmap = node mapping
+* .emap = edge mapping
+* .snmap = shadow node mapping
+* .semap = shadwo edge mapping

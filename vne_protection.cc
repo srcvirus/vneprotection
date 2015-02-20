@@ -8,7 +8,8 @@
 
 const std::string kUsage = "./vne_protection "
                            "--pn_topology_file=<pn_topology_file>\n\t"
-                           "--vn_topology_file=<vn_topology_file>";
+                           "--vn_topology_file=<vn_topology_file>\n\t"
+                           "--location_constraint_file=<location_constraint_file>";
 
 int main(int argc, char *argv[]) {
   using std::string;
