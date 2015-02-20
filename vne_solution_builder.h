@@ -10,11 +10,11 @@ public:
       : vne_solver_ptr_(vne_solver_ptr), physical_topology_(physical_topology),
         virt_topology_(virt_topology) {}
 
-  void PrintWorkingEdgeMapping();
-  void PrintShadowEdgeMapping();
-  void PrintWorkingNodeMapping();
-  void PrintShadowNodeMapping();
-  void PrintCost();
+  void PrintWorkingEdgeMapping(const char* filename);
+  void PrintShadowEdgeMapping(const char* filename);
+  void PrintWorkingNodeMapping(const char* filename);
+  void PrintShadowNodeMapping(const char* filename);
+  void PrintCost(const char* filename);
 
 private:
   VNEProtectionCPLEXSolver *vne_solver_ptr_;
