@@ -35,7 +35,9 @@ std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
   std::vector<std::string> current_line;
   int row_number = 0;
   while (fgets(line_buffer, kBufferSize, file_ptr)) {
+    DEBUG("Read %d characters\n", strlen(line_buffer));
     if (strlen(line_buffer) <= 0) continue;
+    if (line_buffer[0] == '\n' || line_buffer[0] == '\r') continue;
     current_line.clear();
     char *token = strtok(line_buffer, ",\n\r");
     current_line.push_back(token);
