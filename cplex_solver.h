@@ -57,9 +57,12 @@ class VNEProtectionCPLEXSolver {
   IloIntVar4dArray x_mn_uv_;
   // Decision variable for node mapping.
   IloIntVar2dArray y_m_u_;
+
   // Derived variable denoting if a virtual link originating at m is mapped to a
   // physical path going through a physical node u.
-  IloIntVar2dArray eta_m_u_;
+  // (deprecated)
+  // IloIntVar2dArray eta_m_u_;
+
   // Variable indicating location constraint.
   IloInt2dArray l_m_u_;
   // Objective function.

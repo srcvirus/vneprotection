@@ -41,7 +41,7 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   location_constraint_ = location_constraint;
   x_mn_uv_ = IloIntVar4dArray(env_, virt_topology_->node_count() * 2);
   y_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
-  eta_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
+  // eta_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
   l_m_u_ = IloInt2dArray(env_, virt_topology_->node_count() * 2);
 
   // Decision variable initialization for virtual network and shadow virtual
@@ -61,7 +61,7 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   }
   for (int m = 0; m < virt_topology_->node_count() * 2; ++m) {
     y_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
-    eta_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
+    // eta_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
     l_m_u_[m] = IloIntArray(env_, physical_topology_->node_count(), 0, 1);
   }
 
@@ -84,6 +84,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
   int offset = virt_topology_->node_count();
 
   // Constraint: Define eta using constraint on x_mn_uv_
+  // (deprecated)
+  /*
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (int u = 0; u < physical_topology_->node_count(); ++u) {
@@ -100,6 +102,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       model_.add(IloIfThen(env_, sum >= 1, eta_m_u_[m][u] == 1));
     }
   }
+  */
 
   // Constraint: Location constraint of virtual nodes.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
@@ -183,8 +186,6 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     model_.add(sum <= 1);
   }
 
-  // TODO(shihab): Add location constraint here.
-
   // Constraint: Flow constraint to ensure path connectivity.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
@@ -232,18 +233,35 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       }
     }
   }
+
   // Constraint: No two physical paths having a common physical node be shared
-  // between a virtual link and any link from the shadow network.
+  // between a virtual link and any link from the shadow network. Shadow node
+  // mapping should also exclude the nodes used for mapping links of the working
+  // virtual network and vice versa.
   for (int u = 0; u < physical_topology_->node_count(); ++u) {
+    auto &u_neighbors = physical_topology_->adj_list()->at(u);
     IloIntExpr sum(env_);
-    for (int m_shadow = offset;
-         m_shadow < offset + virt_topology_->node_count(); ++m_shadow) {
-      sum += eta_m_u_[m_shadow][u];
-    }
+    IloIntExpr shadow_node_map_sum(env_);
+    IloIntExpr shadow_sum(env_);
     for (int m = 0; m < virt_topology_->node_count(); ++m) {
-      model_.add(IloIfThen(env_, eta_m_u_[m][u] == 1, sum == 0));
+      auto &m_neighbors = virt_topology_->adj_list()->at(m);
+      shadow_node_map_sum += y_m_u_[m + offset][u];
+      for (auto &vend_point : m_neighbors) {
+        int n = vend_point.node_id;
+        for (auto &end_point : u_neighbors) {
+          int v = end_point.node_id;
+          sum += x_mn_uv_[m][n][u][v];
+          shadow_sum += x_mn_uv_[m + offset][n + offset][u][v];
+        }
+      }
+    }
+    model_.add(IloIfThen(env_, sum > 0, shadow_sum == 0));
+    model_.add(IloIfThen(env_, sum >= 1, shadow_node_map_sum == 0));
+    for (int m = 0; m < virt_topology_->node_count(); ++m) {
+      model_.add(IloIfThen(env_, y_m_u_[m][u] == 1, shadow_sum == 0));
     }
   }
+
   // Objective function.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
