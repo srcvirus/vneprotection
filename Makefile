@@ -1,6 +1,6 @@
-LIB_PATHS = -L/opt/ibm/ILOG/CPLEX_Studio125/cplex/lib/x86-64_sles10_4.1/static_pic -L/opt/ibm/ILOG/CPLEX_Studio125/concert/lib/x86-64_sles10_4.1/static_pic
+LIB_PATHS = -L/home/sr2chowd/cplex/cplex/lib/x86-64_sles10_4.1/static_pic -L/home/sr2chowd/cplex/concert/lib/x86-64_sles10_4.1/static_pic
 
-INCLUDE_PATHS = -I/opt/ibm/ILOG/CPLEX_Studio125/cplex/include -I/opt/ibm/ILOG/CPLEX_Studio125/concert/include
+INCLUDE_PATHS = -I/home/sr2chowd/cplex/cplex/include -I/home/sr2chowd/cplex/concert/include
 
 LIBS = -lilocplex -lconcert -lcplex -lm -lpthread  -DIL_STD
 
