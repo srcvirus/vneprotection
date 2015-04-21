@@ -14,15 +14,16 @@ void PrintDebugMessage(const char *location, const char *fmt_string, ...) {
   va_end(args);
 }
 
-template <class T> double GetMean(const std::vector<T> &data) {
+template <class T>
+double GetMean(const std::vector<T> &data) {
   T sum = T(0);
   const size_t kNumElements = data.size();
-  for (auto &element : data)
-    sum += element;
+  for (auto &element : data) sum += element;
   return sum / static_cast<T>(kNumElements);
 }
 
-template <class T> T GetNthPercentile(const std::vector<T> &data, int n) {
+template <class T>
+T GetNthPercentile(const std::vector<T> &data, int n) {
   std::vector<T> temp_data_buffer = data;
   sort(temp_data_buffer.begin(), temp_data_buffer.end());
   const size_t kNumElements = data.size();

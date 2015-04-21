@@ -8,18 +8,22 @@
 
 const std::string kUsage = "./vne_protection "
                            "--pn_topology_file=<pn_topology_file>\n\t"
-                           "--vn_topology_file=<vn_topology_file>";
+                           "--vn_topology_file=<vn_topology_file>\n\t"
+                           "--location_constraint_file=<location_constraint_file>";
 
 int main(int argc, char *argv[]) {
   using std::string;
   auto arg_map = ParseArgs(argc, argv);
   string pn_topology_filename = "";
   string vn_topology_filename = "";
+  string location_constraint_filename = "";
   for (auto argument : *arg_map) {
     if (argument.first == "--pn_topology_file") {
       pn_topology_filename = argument.second;
     } else if (argument.first == "--vn_topology_file") {
       vn_topology_filename = argument.second;
+    } else if (argument.first == "--location_constraint_file") {
+      location_constraint_filename = argument.second;
     } else {
       printf("Invalid command line option: %s\n", argument.first.c_str());
       return 1;
@@ -33,30 +37,33 @@ int main(int argc, char *argv[]) {
   auto shadow_virt_topology =
       InitializeTopologyFromFile(vn_topology_filename.c_str());
   DEBUG(shadow_virt_topology->GetDebugString().c_str());
-  auto vne_cplex_solver = std::unique_ptr<VNEProtectionCPLEXSolver>(
-      new VNEProtectionCPLEXSolver(physical_topology.get(), virt_topology.get(),
-                                   shadow_virt_topology.get()));
+  auto location_constraints = InitializeVNLocationsFromFile(
+      location_constraint_filename.c_str(), virt_topology->node_count());
+  auto vne_cplex_solver =
+      std::unique_ptr<VNEProtectionCPLEXSolver>(new VNEProtectionCPLEXSolver(
+          physical_topology.get(), virt_topology.get(),
+          shadow_virt_topology.get(), location_constraints.get()));
   try {
     auto &cplex_env = vne_cplex_solver->env();
-    IloTimer timer(cplex_env);
-    timer.restart();
     vne_cplex_solver->BuildModel();
     bool is_success = vne_cplex_solver->Solve();
-    timer.stop();
     if (!is_success) {
       auto &cplex = vne_cplex_solver->cplex();
       std::cout << "Solution status: " << cplex.getStatus() << std::endl;
     } else {
-      double running_time = timer.getTime();
-      printf("Run successfully completed in %.3lf seconds\n", running_time);
+      printf("Run successfully completed.\n");
       auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
           new VNESolutionBuilder(vne_cplex_solver.get(),
                                  physical_topology.get(), virt_topology.get()));
-      solution_builder->PrintCost();
-      solution_builder->PrintWorkingNodeMapping();
-      solution_builder->PrintWorkingEdgeMapping();
-      solution_builder->PrintShadowNodeMapping();
-      solution_builder->PrintShadowEdgeMapping();
+      solution_builder->PrintCost((pn_topology_filename + ".cost").c_str());
+      solution_builder->PrintWorkingNodeMapping((pn_topology_filename + ".nmap")
+                                                    .c_str());
+      solution_builder->PrintWorkingEdgeMapping((pn_topology_filename + ".emap")
+                                                    .c_str());
+      solution_builder->PrintShadowNodeMapping((pn_topology_filename + ".snmap")
+                                                   .c_str());
+      solution_builder->PrintShadowEdgeMapping((pn_topology_filename + ".semap")
+                                                   .c_str());
     }
   }
   catch (IloException & e) {

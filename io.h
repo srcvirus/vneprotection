@@ -24,8 +24,8 @@ std::unique_ptr<std::map<std::string, std::string> > ParseArgs(int argc,
   return std::move(arg_map);
 }
 
-std::unique_ptr<std::vector<std::vector<std::string> > >
-ReadCSVFile(const char *filename) {
+std::unique_ptr<std::vector<std::vector<std::string> > > ReadCSVFile(
+    const char *filename) {
   DEBUG("[Parsing %s]\n", filename);
   FILE *file_ptr = fopen(filename, "r");
   const static int kBufferSize = 1024;
@@ -35,6 +35,9 @@ ReadCSVFile(const char *filename) {
   std::vector<std::string> current_line;
   int row_number = 0;
   while (fgets(line_buffer, kBufferSize, file_ptr)) {
+    DEBUG("Read %d characters\n", strlen(line_buffer));
+    if (strlen(line_buffer) <= 0) continue;
+    if (line_buffer[0] == '\n' || line_buffer[0] == '\r') continue;
     current_line.clear();
     char *token = strtok(line_buffer, ",\n\r");
     current_line.push_back(token);
@@ -49,7 +52,6 @@ ReadCSVFile(const char *filename) {
 }
 
 std::unique_ptr<Graph> InitializeTopologyFromFile(const char *filename) {
-  FILE *file_ptr = fopen(filename, "r");
   int node_count = 0, edge_count = 0;
   auto csv_vector = ReadCSVFile(filename);
   std::unique_ptr<Graph> graph(new Graph());
@@ -68,8 +70,23 @@ std::unique_ptr<Graph> InitializeTopologyFromFile(const char *filename) {
           v, cost, bw, delay);
     graph->add_edge(u, v, bw, delay, cost);
   }
-  fclose(file_ptr);
   return std::move(graph);
 }
 
-#endif // IO_H_
+std::unique_ptr<std::vector<std::vector<int> > > InitializeVNLocationsFromFile(
+    const char *filename, int num_virtual_nodes) {
+  DEBUG("Parsing %s\n", filename);
+  auto ret_vector = std::unique_ptr<std::vector<std::vector<int> > >(
+      new std::vector<std::vector<int> >(num_virtual_nodes));
+  auto csv_vector = ReadCSVFile(filename);
+  for (int i = 0; i < csv_vector->size(); ++i) {
+    auto &row = csv_vector->at(i);
+    int vnode_id = atoi(row[0].c_str());
+    for (int j = 1; j < row.size(); ++j) {
+      ret_vector->at(vnode_id).push_back(atoi(row[j].c_str()));
+    }
+  }
+  return std::move(ret_vector);
+}
+
+#endif  // IO_H_

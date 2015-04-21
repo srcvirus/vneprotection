@@ -25,10 +25,11 @@ void PrintIloInt3dArray(IloInt3dArray &a, int dimension1, int dimension2,
                         int dimension3, string name);
 
 class VNEProtectionCPLEXSolver {
-public:
+ public:
   VNEProtectionCPLEXSolver() {}
   VNEProtectionCPLEXSolver(Graph *physical_topology, Graph *virt_topology,
-                           Graph *shadow_virt_topology);
+                           Graph *shadow_virt_topology,
+                           std::vector<std::vector<int>> *location_constraint);
 
   IloEnv &env() { return env_; }
   IloModel &model() { return model_; }
@@ -41,7 +42,7 @@ public:
   void BuildModel();
   bool Solve();
 
-private:
+ private:
 
   IloEnv env_;
   IloModel model_;
@@ -51,14 +52,20 @@ private:
   Graph *physical_topology_;
   Graph *virt_topology_;
   Graph *shadow_virt_topology_;
+  std::vector<std::vector<int>> *location_constraint_;
   // Decision variable for edge mapping.
   IloIntVar4dArray x_mn_uv_;
   // Decision variable for node mapping.
   IloIntVar2dArray y_m_u_;
+
   // Derived variable denoting if a virtual link originating at m is mapped to a
   // physical path going through a physical node u.
-  IloIntVar2dArray eta_m_u_;
+  // (deprecated)
+  // IloIntVar2dArray eta_m_u_;
+
+  // Variable indicating location constraint.
+  IloInt2dArray l_m_u_;
   // Objective function.
   IloExpr objective_;
 };
-#endif // CPLEX_SOLVER_
+#endif  // CPLEX_SOLVER_

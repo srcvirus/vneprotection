@@ -24,7 +24,10 @@ struct edge_endpoint {
   int delay;
   int cost;
   edge_endpoint(int node_id, long bw, int delay, int cost)
-      : node_id(node_id), bandwidth(bw), delay(delay), residual_bandwidth(bw),
+      : node_id(node_id),
+        bandwidth(bw),
+        delay(delay),
+        residual_bandwidth(bw),
         cost(cost) {}
   std::string GetDebugString() {
     return "ndoe_id = " + std::to_string(node_id) + ", bandwidth = " +
@@ -34,7 +37,7 @@ struct edge_endpoint {
 };
 
 class Graph {
-public:
+ public:
   Graph() {
     adj_list_ = std::unique_ptr<std::vector<std::vector<edge_endpoint> > >(
         new std::vector<std::vector<edge_endpoint> >);
@@ -53,10 +56,8 @@ public:
   // bi-directional, i.e., calling Graph::add_edge with u = 1, v = 3 will add
   // both (1, 3) and (3, 1) in the graph.
   int add_edge(int u, int v, long bw, int delay, int cost) {
-    if (adj_list_->size() < u + 1)
-      adj_list_->resize(u + 1);
-    if (adj_list_->size() < v + 1)
-      adj_list_->resize(v + 1);
+    if (adj_list_->size() < u + 1) adj_list_->resize(u + 1);
+    if (adj_list_->size() < v + 1) adj_list_->resize(v + 1);
     adj_list_->at(u).push_back(edge_endpoint(v, bw, delay, cost));
     adj_list_->at(v).push_back(edge_endpoint(u, bw, delay, cost));
     ++edge_count_;
@@ -77,8 +78,8 @@ public:
     return ret_string;
   }
 
-private:
+ private:
   std::unique_ptr<std::vector<std::vector<edge_endpoint> > > adj_list_;
   int node_count_, edge_count_;
 };
-#endif // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
+#endif  // MIDDLEBOX_PLACEMENT_SRC_DATASTRUCTURE_H_
