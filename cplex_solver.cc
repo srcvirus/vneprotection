@@ -83,32 +83,11 @@ void VNEProtectionCPLEXSolver::BuildModel() {
   // node_id offset for the shadow virtual topology.
   int offset = virt_topology_->node_count();
 
-  // Constraint: Define eta using constraint on x_mn_uv_
-  // (deprecated)
-  /*
-  for (int m = 0; m < virt_topology_->node_count(); ++m) {
-    auto &m_neighbors = virt_topology_->adj_list()->at(m);
-    for (int u = 0; u < physical_topology_->node_count(); ++u) {
-      auto &u_neighbors = physical_topology_->adj_list()->at(u);
-      IloIntExpr sum(env_);
-      for (auto &vend_point : m_neighbors) {
-        int n = vend_point.node_id;
-        for (auto &end_point : u_neighbors) {
-          int v = end_point.node_id;
-          DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
-          sum += x_mn_uv_[m][n][u][v];
-        }
-      }
-      model_.add(IloIfThen(env_, sum >= 1, eta_m_u_[m][u] == 1));
-    }
-  }
-  */
-
   // Constraint: Location constraint of virtual nodes.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     for (int u = 0; u < physical_topology_->node_count(); ++u) {
-      model_.add(y_m_u_[m][u] <= l_m_u_[m][u]);
-      model_.add(y_m_u_[m + offset][u] <= l_m_u_[m + offset][u]);
+      constraints_.add(y_m_u_[m][u] <= l_m_u_[m][u]);
+      constraints_.add(y_m_u_[m + offset][u] <= l_m_u_[m + offset][u]);
     }
   }
 
@@ -132,11 +111,11 @@ void VNEProtectionCPLEXSolver::BuildModel() {
           sum_shadow = x_mn_uv_[m + offset][n + offset][u][v] * beta_mn;
         }
       }
-      model_.add(sum <= beta_uv);
-      model_.add(sum_shadow <= beta_uv);
+      constraints_.add(sum <= beta_uv);
+      constraints_.add(sum_shadow <= beta_uv);
     }
   }
-
+  
   // Constraint: Every virtual link is mapped to one or more physical links.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
@@ -152,8 +131,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
           sum_shadow += x_mn_uv_[m + offset][n + offset][u][v];
         }
       }
-      model_.add(sum >= 1);
-      model_.add(sum_shadow >= 1);
+      constraints_.add(sum >= 1);
+      constraints_.add(sum_shadow >= 1);
     }
   }
 
@@ -167,8 +146,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       sum += y_m_u_[m][u];
       sum_shadow += y_m_u_[m + offset][u];
     }
-    model_.add(sum == 1);
-    model_.add(sum_shadow == 1);
+    constraints_.add(sum == 1);
+    constraints_.add(sum_shadow == 1);
   }
 
   // Constraint: No two virtual nodes are mapped to the same physical node.
@@ -180,7 +159,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       sum += y_m_u_[m][u];
       sum += y_m_u_[m + offset][u];
     }
-    model_.add(sum <= 1);
+    constraints_.add(sum <= 1);
   }
 
   // Constraint: Flow constraint to ensure path connectivity.
@@ -188,7 +167,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
-      if (m < n) continue;
+      // if (m < n) continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         IloIntExpr sum(env_);
         IloIntExpr sum_shadow(env_);
@@ -199,8 +178,8 @@ void VNEProtectionCPLEXSolver::BuildModel() {
           sum_shadow += (x_mn_uv_[m + offset][n + offset][u][v] -
                          x_mn_uv_[m + offset][n + offset][v][u]);
         }
-        model_.add(sum == (y_m_u_[m][u] - y_m_u_[n][u]));
-        model_.add(sum_shadow ==
+        constraints_.add(sum == (y_m_u_[m][u] - y_m_u_[n][u]));
+        constraints_.add(sum_shadow ==
                    (y_m_u_[m + offset][u] - y_m_u_[n + offset][u]));
       }
     }
@@ -225,16 +204,21 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         auto &m_neighbors = virt_topology_->adj_list()->at(m);
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
-          model_.add(IloIfThen(env_, x_mn_uv_[m][n][u][v] == 1, sum == 0));
+          // constraints_.add(IloIfThen(env_, x_mn_uv_[m][n][u][v] == 1, sum == 0));
+          // constraints_.add(IloIfThen(env_, sum == 0, x_mn_uv_[m][n][u][v] == 1));
+          constraints_.add(IloIfThen(env_, sum > 0, x_mn_uv_[m][n][u][v] == 0));
+          constraints_.add(IloIfThen(env_, x_mn_uv_[m][n][u][v] == 1, sum == 0));
         }
       }
     }
   }
+  
 
   // Constraint: No two physical paths having a common physical node be shared
   // between a virtual link and any link from the shadow network. Shadow node
   // mapping should also exclude the nodes used for mapping links of the working
   // virtual network and vice versa.
+  
   for (int u = 0; u < physical_topology_->node_count(); ++u) {
     auto &u_neighbors = physical_topology_->adj_list()->at(u);
     IloIntExpr sum(env_);
@@ -252,12 +236,19 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         }
       }
     }
-    model_.add(IloIfThen(env_, sum > 0, shadow_sum == 0));
-    model_.add(IloIfThen(env_, sum >= 1, shadow_node_map_sum == 0));
+    constraints_.add(IloIfThen(env_, sum > 0, shadow_sum == 0));
+    constraints_.add(IloIfThen(env_, shadow_sum > 0, sum == 0));
+    //constraints_.add(IloIfThen(env_, shadow_sum == 0, sum > 0));
+    constraints_.add(IloIfThen(env_, sum >= 1, shadow_node_map_sum == 0));
+    constraints_.add(IloIfThen(env_, shadow_node_map_sum > 0, sum == 0));
+    //constraints_.add(IloIfThen(env_, sum >= 1, shadow_node_map_sum == 0));
     for (int m = 0; m < virt_topology_->node_count(); ++m) {
-      model_.add(IloIfThen(env_, y_m_u_[m][u] == 1, shadow_sum == 0));
+      // constraints_.add(IloIfThen(env_, shadow_sum == 0, y_m_u_[m][u] == 1));
+      constraints_.add(IloIfThen(env_, shadow_sum > 0, y_m_u_[m][u] == 0));
+      constraints_.add(IloIfThen(env_, y_m_u_[m][u] == 1, shadow_sum == 0));
     }
   }
+  
 
   // Objective function.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
@@ -281,14 +272,34 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       }
     }
   }
-  model_.add(objective_ >= 0);
+  constraints_.add(objective_ > 0);
+  model_.add(constraints_);
   model_.add(IloMinimize(env_, objective_));
 }
 
 bool VNEProtectionCPLEXSolver::Solve() {
   // TODO(shihab): Tune parameters of CPLEX solver.
   cplex_.setParam(IloCplex::Threads, 64);
-
+  cplex_.exportModel("drone.lp");
   bool is_success = cplex_.solve();
+  return is_success;
+  if (cplex_.getStatus() == IloAlgorithm::Infeasible) {
+    IloConstraintArray infeasible(env_);
+    IloNumArray preferences(env_);
+    infeasible.add(constraints_);
+    for (int i = 0; i < infeasible.getSize(); ++i) preferences.add(1.0);
+    if (cplex_.refineConflict(infeasible, preferences)) {
+      IloCplex::ConflictStatusArray conflict = cplex_.getConflict(infeasible);
+      env_.getImpl()->useDetailedDisplay(IloTrue);
+      std::cout << "Conflict : " << std::endl;
+      for (IloInt i = 0; i<infeasible.getSize(); i++) {
+        std::cout << conflict[i] << std::endl;
+        if ( conflict[i] == IloCplex::ConflictMember)
+          std::cout << "Proved  : " << infeasible[i] << std::endl;
+          if ( conflict[i] == IloCplex::ConflictPossibleMember)
+            std::cout << "Possible: " << infeasible[i] << std::endl;
+      }
+    } 
+  }
   return is_success;
 }

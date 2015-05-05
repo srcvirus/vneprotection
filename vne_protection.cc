@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
     if (!is_success) {
       auto &cplex = vne_cplex_solver->cplex();
       std::cout << "Solution status: " << cplex.getStatus() << std::endl;
+      std::cout << "X : " << cplex.getCplexStatus() << std::endl;
     } else {
       printf("Run successfully completed.\n");
       auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
