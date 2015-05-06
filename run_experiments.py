@@ -9,10 +9,13 @@ def execute_one_experiment(executable, pn_topology_file, vn_topology_file,
             pn_topology_file, '--vn_topology_file=' + vn_topology_file,
             '--location_constraint_file=' + location_constraint_file],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
-    solution_time = process.stdout.readline().split(':')[1][1:].rstrip('\n')
-    with open(os.path.join(vnr_root, "sn.txt.time"), 'w') as f:
-        f.write(solution_time)
-    print vnr_root + ": " + solution_time
+    # solution_time = process.stdout.readline().split(':')[1][1:].rstrip('\n')
+    out, err = process.communicate()
+    with open(os.path.join(vnr_root, "stdout"), 'w') as f:
+        f.write(out)
+    with open(os.path.join(vnr_root, "stderr"), 'w') as f:
+        f.write(err)
+    print 'Completed ' + vnr_root 
 
 def main():
   parser = argparse.ArgumentParser(

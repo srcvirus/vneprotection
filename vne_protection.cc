@@ -56,14 +56,14 @@ int main(int argc, char *argv[]) {
       auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
           new VNESolutionBuilder(vne_cplex_solver.get(),
                                  physical_topology.get(), virt_topology.get()));
-      solution_builder->PrintCost((pn_topology_filename + ".cost").c_str());
-      solution_builder->PrintWorkingNodeMapping((pn_topology_filename + ".nmap")
+      solution_builder->PrintCost((vn_topology_filename + ".cost").c_str());
+      solution_builder->PrintWorkingNodeMapping((vn_topology_filename + ".nmap")
                                                     .c_str());
-      solution_builder->PrintWorkingEdgeMapping((pn_topology_filename + ".emap")
+      solution_builder->PrintWorkingEdgeMapping((vn_topology_filename + ".emap")
                                                     .c_str());
-      solution_builder->PrintShadowNodeMapping((pn_topology_filename + ".snmap")
+      solution_builder->PrintShadowNodeMapping((vn_topology_filename + ".snmap")
                                                    .c_str());
-      solution_builder->PrintShadowEdgeMapping((pn_topology_filename + ".semap")
+      solution_builder->PrintShadowEdgeMapping((vn_topology_filename + ".semap")
                                                    .c_str());
     }
   }
