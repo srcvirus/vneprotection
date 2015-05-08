@@ -30,6 +30,7 @@ directory (test0 to test9). A test case directory contains the following files:
 
 TestSet-1 has a bit different directory structure and the directory structure is
 as follows:
+```
 TestSet-1/
 └── case0
    ├── sn2.txt
@@ -48,7 +49,7 @@ TestSet-1/
            ├── test0
            ├── test1
            └── test2
-
+```
 The difference here is that the virtual network requests are grouped according 
 to the type of the request (ring, start, random). The semantics of the files
 are as follows:
