@@ -29,7 +29,7 @@ directory (test0 to test9). A test case directory contains the following files:
   * vnloc.txt = Location constraint for the virtual network request
 
 TestSet-1 has a bit different directory structure and the directory structure is
-as follows:
+as follows (repeated and unnecessary file/directory names are not shown):
 ```
 TestSet-1/
 └── case0
@@ -57,8 +57,20 @@ are as follows:
   * vn.txt = Specification of a virtual network request
   * vnloc.txt = Location constraint for the virtual network request
 
-Please see the "Input file format" section for details on the format of the
-aforementioned files.
+Extensive testing with these test sets can be automated by running the provided
+run_experiments.py script. Run the script as follows:
+```
+$ python run_experiments.py --testcase_root <a_testset_directory>\
+			    --executable <name_of_the_executable>
+```
+For example, the following command will run the cplex implementation for all the
+test cases located under TestSet-1 directory:
+```
+$ python run_experiments.py --testset_root TestSet-1 --executable vne_protection
+```
+
+Please refer to the  "Input file format" section for details on the format of 
+the input files.
 
 ## Input file format
 
@@ -90,7 +102,7 @@ virtual node can be mapped.
 
 Currently the solver prints output to the standard output and writes them to
 different output files as well. Each output file is prefixed with the
-physical topology file name and has the following suffixes based on the
+virtual topology file name and has the following suffixes based on the
 contents:
 
 * .cost = solution cost
