@@ -7,6 +7,13 @@ We assume CPLEX is installed in /opt/ibm/ILOG/CPLEX_Studio125. In case CPLEX is
 installed in a different directory replace /opt/ibm/ILOG/CPLEX_Studio125 in the
 Makefile with the CPLEX installation directory.
 
+## File Organization
+  * io.h: Utility functions for I/O
+  * cplex_solver.h(.cc) : Contains class representing the cplex solver for VN 1
+    + 1 protection problem.
+  * vne_solution_builder.h(.cc) : Contains helper class for building the final
+    solution from cplex variables and writing the solutions to file.
+  * vne_protection.cc: Contains the main function.
 ## How to run
 ```
 $ make
