@@ -61,14 +61,13 @@ Extensive testing with these test sets can be automated by running the provided
 run_experiments.py script. Run the script as follows:
 ```
 $ python run_experiments.py --testcase_root <a_testset_directory>\
-			    --executable <name_of_the_executable>
+                            --executable <name_of_the_executable>
 ```
 For example, the following command will run the cplex implementation for all the
 test cases located under TestSet-1 directory:
 ```
 $ python run_experiments.py --testset_root TestSet-1 --executable vne_protection
 ```
-
 Please refer to the  "Input file format" section for details on the format of 
 the input files.
 
