@@ -15,6 +15,7 @@ class VNESolutionBuilder {
   void PrintShadowEdgeMapping(const char *filename);
   void PrintWorkingNodeMapping(const char *filename);
   void PrintShadowNodeMapping(const char *filename);
+  void PrintWaveLengthMapping(const char *filename);
   void PrintCost(const char *filename);
 
  private:

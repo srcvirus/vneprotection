@@ -38,6 +38,9 @@ class VNEProtectionCPLEXSolver {
   IloNumArray &preferences() { return preferences_; }
   IloIntVar4dArray &x_mn_uv() { return x_mn_uv_; }
   IloIntVar2dArray &y_m_u() { return y_m_u_; }
+  IloIntVar5dArray &l_mn_uv_w() { return l_mn_uv_w_; }
+  IloIntVar3dArray &l_mn_w() { return l_mn_w_; }
+  int max_channels() { return max_channels_; }
   IloExpr &objective() { return objective_; }
   void BuildModel();
   bool Solve();
@@ -53,18 +56,19 @@ class VNEProtectionCPLEXSolver {
   Graph *virt_topology_;
   Graph *shadow_virt_topology_;
   std::vector<std::vector<int>> *location_constraint_;
+  uint32_t max_channels_;
   // Decision variable for edge mapping.
   IloIntVar4dArray x_mn_uv_;
   // Decision variable for node mapping.
   IloIntVar2dArray y_m_u_;
-
-  // Derived variable denoting if a virtual link originating at m is mapped to a
-  // physical path going through a physical node u.
-  // (deprecated)
-  // IloIntVar2dArray eta_m_u_;
-
+  // Decision variable for vlink wavelength assignment.
+  IloIntVar3dArray l_mn_w_;
+  // Decision variable for plink wavelength assignment.
+  IloIntVar5dArray l_mn_uv_w_;
   // Variable indicating location constraint.
   IloInt2dArray l_m_u_;
+  // Variable indicating channel availability.
+  IloInt3dArray av_uv_w_;
   // Objective function.
   IloExpr objective_;
 };

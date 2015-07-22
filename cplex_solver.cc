@@ -34,15 +34,25 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
   constraints_ = IloConstraintArray(env_);
   preferences_ = IloNumArray(env_);
   objective_ = IloExpr(env_);
-
+  max_channels_ = 0;
+  for (int i = 0; i < physical_topology->node_count(); ++i) {
+    auto& neighbors = physical_topology->adj_list()->at(i);
+    for (auto& node : neighbors) {
+      if (max_channels_ < node.channels)
+        max_channels_ = node.channels;
+    }
+  }
   physical_topology_ = physical_topology;
   virt_topology_ = virt_topology;
   shadow_virt_topology_ = shadow_virt_topology;
   location_constraint_ = location_constraint;
   x_mn_uv_ = IloIntVar4dArray(env_, virt_topology_->node_count() * 2);
+  l_mn_w_ = IloIntVar3dArray(env_, virt_topology_->node_count() * 2);
+  l_mn_uv_w_ = IloIntVar5dArray(env_, virt_topology_->node_count() * 2);
   y_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
   // eta_m_u_ = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
   l_m_u_ = IloInt2dArray(env_, virt_topology_->node_count() * 2);
+  av_uv_w_ = IloInt3dArray(env_, physical_topology_->node_count());
 
   // Decision variable initialization for virtual network and shadow virtual
   // network.
@@ -50,18 +60,25 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
     // Multiply by two for the double number of nodes when considering the
     // shadow network.
     x_mn_uv_[m] = IloIntVar3dArray(env_, virt_topology_->node_count() * 2);
-
+    l_mn_w_[m] = IloIntVar2dArray(env_, virt_topology_->node_count() * 2);
+    l_mn_uv_w_[m] = IloIntVar4dArray(env_, virt_topology->node_count() * 2);
     for (int n = 0; n < virt_topology_->node_count() * 2; ++n) {
       x_mn_uv_[m][n] = IloIntVar2dArray(env_, physical_topology_->node_count());
+      l_mn_w_[m][n] = IloIntVarArray(env_, max_channels_, 0, 1);
+      l_mn_uv_w_[m][n] = IloIntVar3dArray(env_, physical_topology_->node_count());
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         x_mn_uv_[m][n][u] =
             IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
+        l_mn_uv_w_[m][n][u] = IloIntVar2dArray(env_, physical_topology_->node_count());
+        for (int v = 0; v < physical_topology_->node_count(); ++v) {
+          l_mn_uv_w_[m][n][u][v] = IloIntVarArray(env_, max_channels_, 0, 1);
+        }
       }
     }
   }
+
   for (int m = 0; m < virt_topology_->node_count() * 2; ++m) {
     y_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
-    // eta_m_u_[m] = IloIntVarArray(env_, physical_topology_->node_count(), 0, 1);
     l_m_u_[m] = IloIntArray(env_, physical_topology_->node_count(), 0, 1);
   }
 
@@ -75,6 +92,26 @@ VNEProtectionCPLEXSolver::VNEProtectionCPLEXSolver(
     for (auto &u : loc_constraints) {
       l_m_u_[m][u] = 1;
       l_m_u_[m + offset][u] = 1;
+    }
+  }
+
+  // Initialize channel availability.
+  for (int u = 0; u < physical_topology_->node_count(); ++u) {
+    av_uv_w_[u] = IloInt2dArray(env_, physical_topology_->node_count());
+    for (int v = 0; v < physical_topology_->node_count(); ++v) {
+      av_uv_w_[u][v] = IloIntArray(env_, max_channels_, 0, 1);
+      for (int w = 0; w < max_channels_; ++w) {
+        av_uv_w_[u][v][w] = 0;
+      }
+    }
+    auto& u_neighbors = physical_topology_->adj_list()->at(u);
+    for (auto& node : u_neighbors) {
+      int v = node.node_id;
+      for (int w = 0; w < node.is_channel_available.size(); ++w) {
+        if (node.is_channel_available[w]) {
+          av_uv_w_[u][v][w] = 1;
+        }
+      }
     }
   }
 }
@@ -96,23 +133,23 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     auto &u_neighbors = physical_topology_->adj_list()->at(u);
     for (auto &end_point : u_neighbors) {
       int v = end_point.node_id;
-      int beta_uv = end_point.bandwidth;
+      int w_uv = end_point.residual_channels;
       IloIntExpr sum(env_);
       IloIntExpr sum_shadow(env_);
       for (int m = 0; m < virt_topology_->node_count(); ++m) {
         auto &m_neighbors = virt_topology_->adj_list()->at(m);
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
-          int beta_mn = vend_point.bandwidth;
+          int w_mn = vend_point.channels;
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
           DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
                 m + offset, n + offset);
-          sum += x_mn_uv_[m][n][u][v] * beta_mn;
-          sum_shadow = x_mn_uv_[m + offset][n + offset][u][v] * beta_mn;
+          sum += x_mn_uv_[m][n][u][v] * w_mn;
+          sum_shadow = x_mn_uv_[m + offset][n + offset][u][v] * w_mn;
         }
       }
-      constraints_.add(sum <= beta_uv);
-      constraints_.add(sum_shadow <= beta_uv);
+      constraints_.add(sum <= w_uv);
+      constraints_.add(sum_shadow <= w_uv);
     }
   }
   
@@ -248,15 +285,95 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       constraints_.add(IloIfThen(env_, y_m_u_[m][u] == 1, shadow_sum == 0));
     }
   }
-  
 
+  // Constraint: A virtual link cannot be assigned a wavelength that is not available for
+  // use in the physical link.
+  /*
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    auto& m_neighbors = virt_topology_->adj_list()->at(m);
+    for (auto vend_point : m_neighbors) {
+      int n = vend_point.node_id;
+      for (int u = 0; u < physical_topology_->node_count(); ++u) {
+        auto& u_neighbors = physical_topology_->adj_list()->at(u);
+        for (auto end_point : u_neighbors) {
+          int v = end_point.node_id;
+          for (int w = 0; w < max_channels_; ++w) {
+            constraints_.add(l_mn_uv_w_[m][n][u][v][w] <= av_uv_w_[u][v][w]);
+            constraints_.add(l_mn_uv_w_[m + offset][n + offset][u][v][w] <= av_uv_w_[u][v][w]);
+          }
+        }
+      }
+    }
+  }
+  */
+  // Constraint: A virtual link should be assigned exactly one wavelength
+  /*
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    auto& m_neighbors = virt_topology_->adj_list()->at(m);
+    for (auto& vend_point : m_neighbors) {
+      int n = vend_point.node_id;
+      IloIntExpr sum(env_);
+      IloIntExpr shadow_sum(env_);
+      for (int w = 0; w < max_channels_; ++w) {
+        sum += l_mn_w_[m][n][w];
+        shadow_sum += l_mn_w_[m + offset][n + offset][w];
+      }
+      constraints_.add(sum == 1);
+      constraints_.add(shadow_sum == 1);
+    }
+  }
+  */
+  // Constraint: A wavelength can be used at most once on any given link in the
+  // physical network.
+  /* 
+  for (int u = 0; u < physical_topology_->node_count(); ++u) {
+    auto& u_neighbors = physical_topology_->adj_list()->at(u);
+    for (auto& end_point : u_neighbors) {
+      int v = end_point.node_id;
+      for (int w = 0; w < end_point.is_channel_available.size(); ++w) {
+        IloIntExpr sum(env_);
+        IloIntExpr shadow_sum(env_);
+        for (int m = 0; m < virt_topology_->node_count(); ++m) {
+          auto& m_neighbors = virt_topology_->adj_list()->at(m);
+          for (auto& vend_point : m_neighbors) {
+            int n = vend_point.node_id;
+            sum += l_mn_uv_w_[m][n][u][v][w];
+            shadow_sum += l_mn_uv_w_[m + offset][n + offset][u][v][w];
+          }
+        }
+        constraints_.add(sum <= 1);
+        constraints_.add(shadow_sum <= 1);
+      }
+    }
+  }
+  */
+  // Constraint:
+  /*
+  for (int m = 0; m < virt_topology_->node_count(); ++m) {
+    auto& m_neighbors = virt_topology_->adj_list()->at(m);
+    for (auto vend_point : m_neighbors) {
+      int n = vend_point.node_id;
+      for (int u = 0; u < physical_topology_->node_count(); ++u) {
+        auto u_neighbors = physical_topology_->adj_list()->at(u);
+        for (auto& end_point : u_neighbors) {
+          int v = end_point.node_id;
+          for (int w = 0; w < max_channels_; ++w) {
+            constraints_.add(l_mn_uv_w_[m][n][u][v][w] <= l_mn_w_[m][n][w]);
+            constraints_.add(l_mn_uv_w_[m][n][u][v][w] >= l_mn_w_[m][n][w] + x_mn_uv_[m][n][u][v] - 1);
+            constraints_.add(l_mn_uv_w_[m][n][u][v][w] <= x_mn_uv_[m][n][u][v]);
+          }
+        }
+      }
+    }
+  }
+  */
   // Objective function.
   for (int m = 0; m < virt_topology_->node_count(); ++m) {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
       if (m < n) continue;
-      long beta_mn = vend_point.bandwidth;
+      long w_mn = vend_point.channels;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
@@ -265,9 +382,9 @@ void VNEProtectionCPLEXSolver::BuildModel() {
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
           DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
                 m + offset, n + offset);
-          objective_ += (x_mn_uv_[m][n][u][v] * cost_uv * beta_mn);
+          objective_ += (x_mn_uv_[m][n][u][v] * cost_uv * w_mn);
           objective_ +=
-              (x_mn_uv_[m + offset][n + offset][u][v] * cost_uv * beta_mn);
+              (x_mn_uv_[m + offset][n + offset][u][v] * cost_uv * w_mn);
         }
       }
     }
