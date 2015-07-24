@@ -65,8 +65,8 @@ int main(int argc, char *argv[]) {
                                                    .c_str());
       solution_builder->PrintShadowEdgeMapping((vn_topology_filename + ".semap")
                                                    .c_str());
-      solution_builder->PrintWaveLengthMapping((vn_topology_filename + ".wmap")
-                                                   .c_str());
+      // solution_builder->PrintWaveLengthMapping((vn_topology_filename + ".wmap")
+      //                                             .c_str());
     }
   }
   catch (IloException & e) {
