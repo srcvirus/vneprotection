@@ -1,4 +1,5 @@
 #include "cplex_solver.h"
+#include <unistd.h>
 
 void PrintIloInt2dArray(IloInt2dArray &a, int dimension1, int dimension2,
                         string name) {
@@ -404,8 +405,10 @@ void VNEProtectionCPLEXSolver::BuildModel() {
 
 bool VNEProtectionCPLEXSolver::Solve() {
   // TODO(shihab): Tune parameters of CPLEX solver.
-  cplex_.setParam(IloCplex::Threads, 64);
-  cplex_.exportModel("drone.lp");
+  int n_threads = sysconf(_SC_NPROCESSORS_ONLN);
+  cplex_.setParam(IloCplex::Threads, n_threads);
+  cplex_.setParam(IloCplex::PreDual, true);
+  // cplex_.exportModel("drone.lp");
   bool is_success = cplex_.solve();
   return is_success;
   if (cplex_.getStatus() == IloAlgorithm::Infeasible) {

@@ -2,6 +2,8 @@
 LIB_PATHS = -L/home/sr2chowd/cplex/cplex/lib/x86-64_sles10_4.1/static_pic -L/home/sr2chowd/cplex/concert/lib/x86-64_sles10_4.1/static_pic
 
 # INCLUDE_PATHS = -I/home/sr2chowd/cplex/cplex/include -I/home/sr2chowd/cplex/concert/include
+# LIB_PATHS = -L/home/sr2chowd/cplex/cplex/lib/x86-64_sles10_4.1/static_pic -L/home/sr2chowd/cplex/concert/lib/x86-64_sles10_4.1/static_pic
+
 INCLUDE_PATHS = -I/home/sr2chowd/cplex/cplex/include -I/home/sr2chowd/cplex/concert/include
 LIBS = -lilocplex -lconcert -lcplex -lm -lpthread  -DIL_STD
 
