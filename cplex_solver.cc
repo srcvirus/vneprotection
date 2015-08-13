@@ -404,8 +404,9 @@ void VNEProtectionCPLEXSolver::BuildModel() {
 
 bool VNEProtectionCPLEXSolver::Solve() {
   // TODO(shihab): Tune parameters of CPLEX solver.
-  cplex_.setParam(IloCplex::Threads, 64);
-  cplex_.exportModel("drone.lp");
+  cplex_.setParam(IloCplex::Threads, 128);
+  cplex_.setParam(IloCplex::PreDual, true);
+  // cplex_.exportModel("drone.lp");
   bool is_success = cplex_.solve();
   return is_success;
   if (cplex_.getStatus() == IloAlgorithm::Infeasible) {
