@@ -104,12 +104,22 @@ void VNESolutionBuilder::PrintShadowNodeMapping(const char *filename) {
   if (outfile) fclose(outfile);
 }
 
+void VNESolutionBuilder::PrintSolutionStatus(const char *filename) {
+  auto &cplex = vne_solver_ptr_->cplex();
+  std::cout << "Solution status = " << cplex.getStatus() << std::endl;
+  if (filename) {
+    std::ofstream ofs(filename);
+    ofs << cplex.getStatus();
+    ofs.close();
+  }
+}
+
 void VNESolutionBuilder::PrintCost(const char *filename) {
   FILE *outfile = NULL;
   if (filename) outfile = fopen(filename, "w");
   auto &cplex = vne_solver_ptr_->cplex();
   printf("Cost = %lf\n", cplex.getObjValue());
   if (outfile) {
-    fprintf(outfile, "Cost = %lf\n", cplex.getObjValue());
+    fprintf(outfile, "%lf\n", cplex.getObjValue());
   }
 }

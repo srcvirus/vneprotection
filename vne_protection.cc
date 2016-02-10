@@ -51,6 +51,11 @@ int main(int argc, char *argv[]) {
       auto &cplex = vne_cplex_solver->cplex();
       std::cout << "Solution status: " << cplex.getStatus() << std::endl;
       std::cout << "X : " << cplex.getCplexStatus() << std::endl;
+      auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
+          new VNESolutionBuilder(vne_cplex_solver.get(),
+            physical_topology.get(), virt_topology.get()));
+      solution_builder->PrintSolutionStatus(
+          (vn_topology_filename + ".status").c_str());
     } else {
       printf("Run successfully completed.\n");
       auto solution_builder = std::unique_ptr<VNESolutionBuilder>(
@@ -65,6 +70,8 @@ int main(int argc, char *argv[]) {
                                                    .c_str());
       solution_builder->PrintShadowEdgeMapping((vn_topology_filename + ".semap")
                                                    .c_str());
+      solution_builder->PrintSolutionStatus((vn_topology_filename + ".status")
+                                                .c_str());
     }
   }
   catch (IloException & e) {
