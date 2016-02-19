@@ -103,12 +103,13 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         auto &m_neighbors = virt_topology_->adj_list()->at(m);
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
+          if (m < n) continue;
           int beta_mn = vend_point.bandwidth;
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
           DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
                 m + offset, n + offset);
-          sum += x_mn_uv_[m][n][u][v] * beta_mn;
-          sum_shadow = x_mn_uv_[m + offset][n + offset][u][v] * beta_mn;
+          sum += (x_mn_uv_[m][n][u][v] + x_mn_uv_[m][n][v][u]) * beta_mn;
+          sum_shadow = (x_mn_uv_[m + offset][n + offset][u][v] + x_mn_uv_[m + offset][n + offset][v][u]) * beta_mn;
         }
       }
       constraints_.add(sum <= beta_uv);
@@ -121,12 +122,22 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
+      if (m < n) continue;
       IloIntExpr sum(env_);
       IloIntExpr sum_shadow(env_);
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
+          constraints_.add(IloIfThen(env_, x_mn_uv_[m][n][u][v] == 1,
+                                     x_mn_uv_[m][n][v][u] == 0));
+          constraints_.add(IloIfThen(env_, x_mn_uv_[m][n][v][u] == 1,
+                                     x_mn_uv_[m][n][u][v] == 0));
+          constraints_.add(IloIfThen(env_, x_mn_uv_[m + offset][n + offset][u][v] == 1,
+                                     x_mn_uv_[m + offset][n + offset][v][u] == 0));
+          constraints_.add(IloIfThen(env_, x_mn_uv_[m + offset][n + offset][v][u] == 1,
+                                     x_mn_uv_[m + offset][n + offset][u][v] == 0));
+
           sum += x_mn_uv_[m][n][u][v];
           sum_shadow += x_mn_uv_[m + offset][n + offset][u][v];
         }
@@ -167,7 +178,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
     auto &m_neighbors = virt_topology_->adj_list()->at(m);
     for (auto &vend_point : m_neighbors) {
       int n = vend_point.node_id;
-      // if (m < n) continue;
+      if (m < n) continue;
       for (int u = 0; u < physical_topology_->node_count(); ++u) {
         IloIntExpr sum(env_);
         IloIntExpr sum_shadow(env_);
@@ -197,6 +208,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         auto &m_neighbors = virt_topology_->adj_list()->at(m);
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
+          if (m < n) continue;
           sum += x_mn_uv_[m + offset][n + offset][u][v];
         }
       }
@@ -204,6 +216,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         auto &m_neighbors = virt_topology_->adj_list()->at(m);
         for (auto &vend_point : m_neighbors) {
           int n = vend_point.node_id;
+          if (m < n) continue;
           // constraints_.add(IloIfThen(env_, x_mn_uv_[m][n][u][v] == 1, sum == 0));
           // constraints_.add(IloIfThen(env_, sum == 0, x_mn_uv_[m][n][u][v] == 1));
           constraints_.add(IloIfThen(env_, sum > 0, x_mn_uv_[m][n][u][v] == 0));
@@ -229,6 +242,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
       shadow_node_map_sum += y_m_u_[m + offset][u];
       for (auto &vend_point : m_neighbors) {
         int n = vend_point.node_id;
+        if (m < n) continue;
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
           sum += x_mn_uv_[m][n][u][v];
@@ -261,7 +275,7 @@ void VNEProtectionCPLEXSolver::BuildModel() {
         auto &u_neighbors = physical_topology_->adj_list()->at(u);
         for (auto &end_point : u_neighbors) {
           int v = end_point.node_id;
-	  int cost_uv = end_point.cost;
+	        int cost_uv = end_point.cost;
           DEBUG("u = %d, v = %d, m = %d, n = %d\n", u, v, m, n);
           DEBUG("u = %d, v = %d, m + offset = %d, n + offset = %d\n", u, v,
                 m + offset, n + offset);
